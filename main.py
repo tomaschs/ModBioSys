@@ -92,7 +92,7 @@ if __name__ == "__main__":
     random.seed(datetime.now().timestamp())
 
     # od 8:00 do 14:00 (6 hodín) = 6*60 = 360 minút
-    sim = Simulation(sample_arrival_mean=5, end_time=360)
+    sim = Simulation(sample_arrival_mean=5, end_time=360, verbose=True)
     results = sim.run()
 
     display_results(sim.lab, results)
