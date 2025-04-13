@@ -26,6 +26,7 @@ class Simulation:
             if time < self.end_time:  # Only add if within working hours
                 sample = Sample(time)
                 self.lab.add_event(Event(time, EventType.SAMPLE_ARRIVAL, sample=sample))
+                #print(time)
 
         # Add simulation end event
         self.lab.add_event(Event(self.end_time, EventType.SIMULATION_END))

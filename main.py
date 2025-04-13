@@ -9,9 +9,9 @@ from datetime import datetime
 
 def display_results(lab, results):
     print("\n=== ŠTATISTIKY HISTOPATOLOGICKÉHO PRACOVISKA ===")
-    print(f"Celkový počet vzoriek: {results['total_samples']}")
     print(f"Spracovaných vzoriek: {results['processed_samples']}")
     print(f"Nespracovaných vzoriek: {results['remaining_samples']}")
+    print(f"Celkový počet spracovaných + nespracovaných vzoriek: {results['total_samples']}")
 
     if hasattr(lab, 'waiting_times') and lab.waiting_times:
         avg_wait = sum(lab.waiting_times) / len(lab.waiting_times)
