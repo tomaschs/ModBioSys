@@ -1,5 +1,6 @@
 import random
-from HistopathologyLab import HistopathologyLab
+from histopathology_lab import HistopathologyLab, Event, EventType
+from sample import Sample
 
 
 class Simulation:
@@ -45,9 +46,3 @@ class Simulation:
             "total_samples": len(self.lab.processed_samples) + remaining_samples,
             "samples": self.lab.processed_samples
         }
-
-# To run the simulation:
-sim = Simulation()
-results = sim.run()
-print(f"Processed {results['processed_samples']} samples")
-print(f"Remaining {results['remaining_samples']} samples in queues at end of day")
