@@ -11,7 +11,7 @@ class EventType(Enum):
     DOCTOR_COMPLETION = "doctor_completion"
     HEAD_DOCTOR_COMPLETION = "head_doctor_completion"
     SIMULATION_END = "simulation_end"
-
+    HEAD_DOCTOR_SHIFT_START = "head_doctor_shift_start"
 
 class Event:
     def __init__(self, time, event_type, doctor=None, sample=None):
@@ -69,6 +69,8 @@ class HistopathologyLab:
             self.handle_doctor_completion(event.doctor)
         elif event.event_type == EventType.HEAD_DOCTOR_COMPLETION:
             self.handle_head_doctor_completion()
+        elif event.event_type == EventType.HEAD_DOCTOR_SHIFT_START:
+            self.handle_head_doctor_shift_start()
 
         # After processing each event, show status summary
         if self.verbose:
@@ -208,3 +210,18 @@ class HistopathologyLab:
                         f"          Primár nie je dostupný v tomto čase. Vzorky v rade: {len(self.head_doctor_queue)}")
                 else:
                     print(f"          Primár je teraz voľný")
+
+    def handle_head_doctor_shift_start(self):
+        # Check if there are samples waiting and the head doctor is available
+        if self.head_doctor_queue and self.head_doctor.is_available(self.current_time):
+            next_sample = self.head_doctor_queue.popleft()
+            wait_time = self.current_time - next_sample.queue_entry_time
+            self.waiting_times.append(wait_time)
+
+            self.head_doctor.assign_sample(next_sample, self.current_time)
+            self.add_event(Event(
+                self.head_doctor.completion_time,
+                EventType.HEAD_DOCTOR_COMPLETION,
+                doctor=self.head_doctor,
+                sample=next_sample
+            ))
