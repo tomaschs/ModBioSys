@@ -5,6 +5,7 @@ from doctor import Doctor
 from headDoctor import HeadDoctor
 from histopathology_lab import HistopathologyLab, EventType, Event
 from simulation import Simulation
+from datetime import datetime
 
 def display_results(lab, results):
     print("\n=== ŠTATISTIKY HISTOPATOLOGICKÉHO PRACOVISKA ===")
@@ -88,13 +89,11 @@ def plot_results(lab, results):
     plt.show()
 
 if __name__ == "__main__":
-    # Set random seed for reproducibility
-    random.seed(42)
+    random.seed(datetime.now().timestamp())
 
-    # Run the simulation
+    # od 8:00 do 14:00 (6 hodín) = 6*60 = 360 minút
     sim = Simulation(sample_arrival_mean=5, end_time=360)
     results = sim.run()
 
-    # Display and visualize results
     display_results(sim.lab, results)
     plot_results(sim.lab, results)

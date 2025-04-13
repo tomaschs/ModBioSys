@@ -12,7 +12,6 @@ class EventType(Enum):
     HEAD_DOCTOR_COMPLETION = "head_doctor_completion"
     SIMULATION_END = "simulation_end"
 
-
 class Event:
     def __init__(self, time, event_type, doctor=None, sample=None):
         self.time = time
@@ -34,6 +33,13 @@ class HistopathologyLab:
         self.current_time = 0
         self.events = []
 
+        # For statistics tracking
+        self.waiting_times = []
+        self.queue_lengths = []
+        self.queue_times = []
+        self.doctor_utilization = []
+        self.utilization_times = []
+
     def add_event(self, event):
         # Insert event in the correct position to maintain time order
         self.events.append(event)
@@ -46,6 +52,15 @@ class HistopathologyLab:
         event = self.events.pop(0)
         self.current_time = event.time
 
+        # Record queue length at this time
+        self.queue_lengths.append(len(self.regular_queue) + len(self.head_doctor_queue))
+        self.queue_times.append(self.current_time)
+
+        # Record doctor utilization
+        busy_doctors = sum(1 for doctor in self.doctors if doctor.busy)
+        self.doctor_utilization.append(busy_doctors / len(self.doctors))
+        self.utilization_times.append(self.current_time)
+
         if event.event_type == EventType.SAMPLE_ARRIVAL:
             self.handle_sample_arrival(event.sample)
         elif event.event_type == EventType.DOCTOR_COMPLETION:
@@ -56,48 +71,61 @@ class HistopathologyLab:
         return event
 
     def handle_sample_arrival(self, sample):
-        # For samples that need head doctor review
-        if sample.needs_head_doctor_review:
-            sample.generate_head_doctor_processing_time()
+        # All samples first go through normal doctors
+        assigned = False
+        for doctor in self.doctors:
+            if doctor.is_available(self.current_time):
+                doctor.assign_sample(sample, self.current_time)
+                # Schedule a completion event
+                self.add_event(Event(
+                    doctor.completion_time,
+                    EventType.DOCTOR_COMPLETION,
+                    doctor=doctor,
+                    sample=sample
+                ))
+                assigned = True
+                break
+
+        if not assigned:
+            # Add queue entry time for waiting time statistics
+            sample.queue_entry_time = self.current_time
+            self.regular_queue.append(sample)
+
+    def handle_doctor_completion(self, doctor):
+        completed_sample = doctor.complete_sample()
+
+        # Check if this sample needs head doctor review
+        if completed_sample.needs_head_doctor_review:
+            completed_sample.generate_head_doctor_processing_time()
             if self.head_doctor.is_available(self.current_time):
-                # Assign directly if head doctor is available
-                self.head_doctor.assign_sample(sample, self.current_time)
+                # Assign directly to head doctor
+                self.head_doctor.assign_sample(completed_sample, self.current_time)
                 # Schedule a completion event
                 self.add_event(Event(
                     self.head_doctor.completion_time,
                     EventType.HEAD_DOCTOR_COMPLETION,
                     doctor=self.head_doctor,
-                    sample=sample
+                    sample=completed_sample
                 ))
             else:
                 # Queue for head doctor review
-                self.head_doctor_queue.append(sample)
+                if not hasattr(completed_sample, 'queue_entry_time'):
+                    completed_sample.queue_entry_time = self.current_time
+                self.head_doctor_queue.append(completed_sample)
         else:
-            # Handle regular sample processing
-            assigned = False
-            for doctor in self.doctors:
-                if doctor.is_available(self.current_time):
-                    doctor.assign_sample(sample, self.current_time)
-                    # Schedule a completion event
-                    self.add_event(Event(
-                        doctor.completion_time,
-                        EventType.DOCTOR_COMPLETION,
-                        doctor=doctor,
-                        sample=sample
-                    ))
-                    assigned = True
-                    break
-
-            if not assigned:
-                self.regular_queue.append(sample)
-
-    def handle_doctor_completion(self, doctor):
-        completed_sample = doctor.complete_sample()
-        self.processed_samples.append(completed_sample)
+            # Regular sample is fully processed
+            self.processed_samples.append(completed_sample)
 
         # Try to assign next sample from queue if available
         if self.regular_queue:
             next_sample = self.regular_queue.popleft()
+            # Calculate waiting time for statistics
+            if hasattr(next_sample, 'queue_entry_time'):
+                wait_time = self.current_time - next_sample.queue_entry_time
+                if not hasattr(self, 'waiting_times'):
+                    self.waiting_times = []
+                self.waiting_times.append(wait_time)
+
             doctor.assign_sample(next_sample, self.current_time)
             self.add_event(Event(
                 doctor.completion_time,

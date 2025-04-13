@@ -12,8 +12,8 @@ class Simulation:
             sample_arrival_mean: Mean time between sample arrivals in minutes
             end_time: End time of simulation in minutes (default: 360 = 6 hours)
         """
-        self.sample_arrival_mean = sample_arrival_mean  # average 5 minutes between arrivals
-        self.end_time = end_time  # 8:00 - 14:00 = 6 hours = 360 minutes
+        self.sample_arrival_mean = sample_arrival_mean
+        self.end_time = end_time
         self.lab = HistopathologyLab()
 
     def setup(self):
@@ -21,6 +21,7 @@ class Simulation:
         time = 0
         while time < self.end_time:
             # Generate next arrival time using exponential distribution
+            # lambda = 1 / sample_arrival_mean
             time += random.expovariate(1.0 / self.sample_arrival_mean)
             if time < self.end_time:  # Only add if within working hours
                 sample = Sample(time)
