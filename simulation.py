@@ -26,7 +26,7 @@ class Simulation:
             if time < self.end_time:  # Only add if within working hours
                 sample = Sample(time)
                 self.lab.add_event(Event(time, EventType.SAMPLE_ARRIVAL, sample=sample))
-                print(time)
+                #print(time)
 
         # Add head doctor shift start events
         if self.end_time >= 120:  # First shift at 10:00

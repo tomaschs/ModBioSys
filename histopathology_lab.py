@@ -212,6 +212,9 @@ class HistopathologyLab:
                     print(f"          Primár je teraz voľný")
 
     def handle_head_doctor_shift_start(self):
+        if self.verbose:
+            print(f"[{self.current_time:.2f} min] Začiatok pracovnej doby primára")
+
         # Check if there are samples waiting and the head doctor is available
         if self.head_doctor_queue and self.head_doctor.is_available(self.current_time):
             next_sample = self.head_doctor_queue.popleft()
