@@ -1,10 +1,12 @@
 import random
 import enum
 
+
 class SampleSize(enum.Enum):
     SMALL = "small"
     MEDIUM = "medium"
     LARGE = "large"
+
 
 class Sample:
     def __init__(self, arrival_time):

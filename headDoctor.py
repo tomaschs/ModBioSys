@@ -1,5 +1,6 @@
 from doctor import Doctor
 
+
 class HeadDoctor(Doctor):
     def __init__(self, doctor_id):
         super().__init__(doctor_id)
@@ -17,12 +18,9 @@ class HeadDoctor(Doctor):
         if self.busy and current_time < self.completion_time:
             return False
 
-        # Available from 10:00-11:00 (120-180 minutes from 8:00)
-        if 120 <= current_time <= 180:
-            return True
-
-        # Available from 12:00-14:00 (240-360 minutes from 8:00)
-        if 240 <= current_time <= 360:
+        # Available from 10:00-11:00 and 12:00-14:00
+        working_hours = [(120, 180), (240, 360)]
+        if any(start <= current_time <= end for start, end in working_hours):
             return True
 
         return False

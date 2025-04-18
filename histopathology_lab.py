@@ -13,6 +13,7 @@ class EventType(Enum):
     SIMULATION_END = "simulation_end"
     HEAD_DOCTOR_SHIFT_START = "head_doctor_shift_start"
 
+
 class Event:
     def __init__(self, time, event_type, doctor=None, sample=None):
         self.time = time
@@ -30,6 +31,7 @@ class HistopathologyLab:
         self.head_doctor = HeadDoctor(num_doctors)
         self.regular_queue = deque()
         self.head_doctor_queue = deque()
+        self.waiting_samples = deque()
         self.processed_samples = []
         self.current_time = 0
         self.events = []
@@ -46,6 +48,9 @@ class HistopathologyLab:
         self.events.append(event)
         self.events.sort()
 
+    def schedule_event(self, time, event_type, doctor=None, sample=None):
+        self.add_event(Event(time, event_type, doctor, sample))
+
     def process_next_event(self):
         if not self.events:
             return None
@@ -58,8 +63,11 @@ class HistopathologyLab:
         self.queue_times.append(self.current_time)
 
         # Record doctor utilization
-        busy_doctors = sum(1 for doctor in self.doctors if doctor.busy)
-        self.doctor_utilization.append(busy_doctors / len(self.doctors))
+        # busy_doctors = sum(1 for doctor in self.doctors if doctor.busy)
+        # self.doctor_utilization.append(busy_doctors / len(self.doctors))
+
+        # Record individual doctor utilization (1 = busy, 0 = free)
+        self.doctor_utilization.append([1 if doctor.busy else 0 for doctor in self.doctors])
         self.utilization_times.append(self.current_time)
 
         if event.event_type == EventType.SAMPLE_ARRIVAL:
@@ -80,18 +88,14 @@ class HistopathologyLab:
             if doctor.is_available(self.current_time):
                 doctor.assign_sample(sample, self.current_time)
                 # Schedule a completion event
-                self.add_event(Event(
-                    doctor.completion_time,
-                    EventType.DOCTOR_COMPLETION,
-                    doctor=doctor,
-                    sample=sample
-                ))
+                self.schedule_event(doctor.completion_time, EventType.DOCTOR_COMPLETION, doctor, sample)
                 assigned = True
                 break
 
         if not assigned:
             # Add queue entry time for waiting time statistics
             sample.queue_entry_time = self.current_time
+            self.waiting_samples.append(sample)
             self.regular_queue.append(sample)
 
     def handle_doctor_completion(self, doctor):
@@ -104,16 +108,14 @@ class HistopathologyLab:
                 # Assign directly to head doctor
                 self.head_doctor.assign_sample(completed_sample, self.current_time)
                 # Schedule a completion event
-                self.add_event(Event(
-                    self.head_doctor.completion_time,
-                    EventType.HEAD_DOCTOR_COMPLETION,
-                    doctor=self.head_doctor,
-                    sample=completed_sample
-                ))
+                self.schedule_event(self.head_doctor.completion_time, EventType.HEAD_DOCTOR_COMPLETION,
+                                    self.head_doctor, completed_sample)
             else:
                 # Queue for head doctor review
                 if not hasattr(completed_sample, 'queue_entry_time'):
                     completed_sample.queue_entry_time = self.current_time
+
+                self.waiting_samples.append(completed_sample)
                 self.head_doctor_queue.append(completed_sample)
         else:
             # Regular sample is fully processed
@@ -130,12 +132,7 @@ class HistopathologyLab:
                 self.waiting_times.append(wait_time)
 
             doctor.assign_sample(next_sample, self.current_time)
-            self.add_event(Event(
-                doctor.completion_time,
-                EventType.DOCTOR_COMPLETION,
-                doctor=doctor,
-                sample=next_sample
-            ))
+            self.schedule_event(doctor.completion_time, EventType.DOCTOR_COMPLETION, doctor, next_sample)
 
     def handle_head_doctor_completion(self):
         completed_sample = self.head_doctor.complete_sample()
@@ -145,12 +142,7 @@ class HistopathologyLab:
         if self.head_doctor_queue and self.head_doctor.is_available(self.current_time):
             next_sample = self.head_doctor_queue.popleft()
             self.head_doctor.assign_sample(next_sample, self.current_time)
-            self.add_event(Event(
-                self.head_doctor.completion_time,
-                EventType.HEAD_DOCTOR_COMPLETION,
-                doctor=self.head_doctor,
-                sample=next_sample
-            ))
+            self.schedule_event(self.head_doctor.completion_time, EventType.HEAD_DOCTOR_COMPLETION, self.head_doctor, next_sample)
 
     def handle_head_doctor_shift_start(self):
         # Check if there are samples waiting and the head doctor is available
@@ -160,9 +152,4 @@ class HistopathologyLab:
             self.waiting_times.append(wait_time)
 
             self.head_doctor.assign_sample(next_sample, self.current_time)
-            self.add_event(Event(
-                self.head_doctor.completion_time,
-                EventType.HEAD_DOCTOR_COMPLETION,
-                doctor=self.head_doctor,
-                sample=next_sample
-            ))
+            self.schedule_event(self.head_doctor.completion_time, EventType.HEAD_DOCTOR_COMPLETION, self.head_doctor, next_sample)
