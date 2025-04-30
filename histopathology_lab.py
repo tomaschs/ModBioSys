@@ -62,12 +62,10 @@ class HistopathologyLab:
         self.queue_lengths.append(len(self.regular_queue) + len(self.head_doctor_queue))
         self.queue_times.append(self.current_time)
 
-        # Record doctor utilization
-        # busy_doctors = sum(1 for doctor in self.doctors if doctor.busy)
-        # self.doctor_utilization.append(busy_doctors / len(self.doctors))
-
-        # Record individual doctor utilization (1 = busy, 0 = free)
-        self.doctor_utilization.append([1 if doctor.busy else 0 for doctor in self.doctors])
+        # Record doctor and head_doctor utilization
+        utilization_row = [1 if doctor.busy else 0 for doctor in self.doctors]
+        utilization_row.append(1 if self.head_doctor.busy else 0)  # primár ako posledný
+        self.doctor_utilization.append(utilization_row)
         self.utilization_times.append(self.current_time)
 
         if event.event_type == EventType.SAMPLE_ARRIVAL:

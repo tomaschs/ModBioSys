@@ -4,7 +4,7 @@ from sample import Sample
 
 
 class Simulation:
-    def __init__(self, sample_arrival_mean=5, end_time=360):
+    def __init__(self, sample_arrival_mean=5, end_time=360, num_doctors=4):
         """
         Initialize simulation parameters
 
@@ -14,7 +14,7 @@ class Simulation:
         """
         self.sample_arrival_mean = sample_arrival_mean
         self.end_time = end_time
-        self.lab = HistopathologyLab()
+        self.lab = HistopathologyLab(num_doctors)
 
     def setup(self):
         # Generate all sample arrival events
