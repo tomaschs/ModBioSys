@@ -155,11 +155,14 @@ class HistopathologyLab:
             self.schedule_event(self.head_doctor.completion_time, EventType.HEAD_DOCTOR_COMPLETION, self.head_doctor, next_sample)
 
     def handle_head_doctor_shift_start(self):
-        # Check if there are samples waiting and the head doctor is available
         if self.head_doctor_queue and self.head_doctor.is_available(self.current_time):
             next_sample = self.head_doctor_queue.popleft()
-            wait_time = self.current_time - next_sample.queue_entry_time
-            self.waiting_times.append(wait_time)
+
+            # Calculate waiting time when assigning the sample
+            if hasattr(next_sample, 'queue_entry_time'):
+                wait_time = self.current_time - next_sample.queue_entry_time
+                self.waiting_times.append(wait_time)
 
             self.head_doctor.assign_sample(next_sample, self.current_time)
-            self.schedule_event(self.head_doctor.completion_time, EventType.HEAD_DOCTOR_COMPLETION, self.head_doctor, next_sample)
+            self.schedule_event(self.head_doctor.completion_time, EventType.HEAD_DOCTOR_COMPLETION, self.head_doctor,
+                                next_sample)
