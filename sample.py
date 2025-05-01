@@ -11,6 +11,7 @@ class SampleSize(enum.Enum):
 class Sample:
     def __init__(self, arrival_time):
         self.arrival_time = arrival_time
+        self.end_time = 0
         # 10% large, 20% medium, 70% small
         # normalvariate = normal distribution
         size_rand = random.random()

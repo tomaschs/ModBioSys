@@ -6,6 +6,10 @@ from doctor import Doctor
 from headDoctor import HeadDoctor
 
 
+def set_sample_end_time(sample, time):
+    sample.end_time = time
+
+
 class EventType(Enum):
     SAMPLE_ARRIVAL = "sample_arrival"
     DOCTOR_COMPLETION = "doctor_completion"
@@ -117,6 +121,7 @@ class HistopathologyLab:
                 self.head_doctor_queue.append(completed_sample)
         else:
             # Regular sample is fully processed
+            set_sample_end_time(completed_sample, self.current_time)
             self.processed_samples.append(completed_sample)
 
         # Try to assign next sample from queue if available
@@ -134,6 +139,7 @@ class HistopathologyLab:
 
     def handle_head_doctor_completion(self):
         completed_sample = self.head_doctor.complete_sample()
+        set_sample_end_time(completed_sample, self.current_time)
         self.processed_samples.append(completed_sample)
 
         # Try to assign next sample from head doctor queue if available
