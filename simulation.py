@@ -40,18 +40,23 @@ class Simulation:
 
     def run(self):
         self.setup()
+        simulation_ended = False
 
         while self.lab.events:
             event = self.lab.process_next_event()
-            if event.event_type == EventType.SIMULATION_END:
-                break
 
-        # Process any remaining samples in queues for statistics
-        remaining_samples = len(self.lab.regular_queue) + len(self.lab.head_doctor_queue)
+            if event.event_type == EventType.SIMULATION_END:
+                simulation_ended = True
+
+            # Only exit when simulation has ended AND all processing is complete
+            if simulation_ended:
+                if (not any(doc.busy for doc in self.lab.doctors) and
+                        not self.lab.head_doctor.busy and
+                        len(self.lab.regular_queue) == 0 and
+                        len(self.lab.head_doctor_queue) == 0):
+                    break
 
         return {
             "processed_samples": len(self.lab.processed_samples),
-            "remaining_samples": remaining_samples,
-            "total_samples": len(self.lab.processed_samples) + remaining_samples,
             "samples": self.lab.processed_samples
         }
