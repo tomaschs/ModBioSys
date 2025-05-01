@@ -111,7 +111,7 @@ class HistopathologyLab:
         if completed_sample.needs_head_doctor_review:
             completed_sample.generate_head_doctor_processing_time()
             if self.head_doctor.is_available(self.current_time):
-                # Assign directly to head doctor
+                # Assign to head doctor
                 self.head_doctor.assign_sample(completed_sample, self.current_time)
                 # Schedule a completion event
                 self.schedule_event(self.head_doctor.completion_time, EventType.HEAD_DOCTOR_COMPLETION,
@@ -149,6 +149,12 @@ class HistopathologyLab:
         # Try to assign next sample from head doctor queue if available
         if self.head_doctor_queue and self.head_doctor.is_available(self.current_time):
             next_sample = self.head_doctor_queue.popleft()
+
+            # Calculate waiting time for statistics
+            if hasattr(next_sample, 'queue_entry_time'):
+                wait_time = self.current_time - next_sample.queue_entry_time
+                self.waiting_times.append(wait_time)
+
             self.head_doctor.assign_sample(next_sample, self.current_time)
             self.schedule_event(self.head_doctor.completion_time, EventType.HEAD_DOCTOR_COMPLETION, self.head_doctor, next_sample)
 
