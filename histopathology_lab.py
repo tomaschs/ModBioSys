@@ -42,7 +42,9 @@ class HistopathologyLab:
 
         # For statistics tracking
         self.waiting_times = []
-        self.queue_lengths = []
+        self.regular_queue_lengths = []
+        self.head_doctor_queue_lengths = []
+        # self.queue_lengths = []
         self.queue_times = []
         self.doctor_utilization = []
         self.utilization_times = []
@@ -63,7 +65,9 @@ class HistopathologyLab:
         self.current_time = event.time
 
         # Record queue length at this time
-        self.queue_lengths.append(len(self.regular_queue) + len(self.head_doctor_queue))
+        # self.queue_lengths.append(len(self.regular_queue) + len(self.head_doctor_queue))
+        self.regular_queue_lengths.append(len(self.regular_queue))
+        self.head_doctor_queue_lengths.append(len(self.head_doctor_queue))
         self.queue_times.append(self.current_time)
 
         # Record doctor and head_doctor utilization
